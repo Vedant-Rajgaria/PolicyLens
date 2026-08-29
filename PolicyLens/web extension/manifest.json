@@ -1,0 +1,17 @@
+{
+    "manifest_version": 3,
+
+    "name": "PolicyLens",
+
+    "version": "0.1.0",
+
+    "description": "Know what you're agreeing to.",
+
+    "permissions": [
+        "activeTab"
+    ],
+
+    "action": {
+        "default_popup": "src/UI/index.html"
+    }
+}
