@@ -4,15 +4,13 @@ from pydantic import BaseModel
 
 app = FastAPI()
 
-# Extensions send requests from a chrome-extension:// origin.
-# Locking this down later is fine; for now allow all so nothing blocks you.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-#defines expected request format
+
 class AnalyzeRequest(BaseModel):
     url: str
     title: str
@@ -20,9 +18,17 @@ class AnalyzeRequest(BaseModel):
 
 @app.post("/analyze")
 def analyze(req: AnalyzeRequest):
-    # Placeholder for pipeline.py — proves the round trip works.
+    # Stub logic standing in for pipeline.py — proves the round trip.
+    # Later this becomes checker.py + search.py + analyzer.py output.
     return {
-        "summary": f"Received {len(req.text)} characters from {req.title}",
-        "word_count": len(req.text.split()),
-        "echo_url": req.url,
+        "cards": [
+            {"label": "Return Window", "badgeText": "ATTENTION", "badgeType": "attention", "detail": "7 days"},
+            {"label": "Refund", "badgeText": "AVAILABLE", "badgeType": "safe", "detail": "After product inspection"},
+            {"label": "Warranty", "badgeText": "1 YEAR", "badgeType": "safe", "detail": "Physical damage is excluded"},
+        ],
+        "warnings": [
+            "Only 7 days to return the product.",
+            "Refund depends on product inspection.",
+            "Physical damage is not covered by warranty.",
+        ],
     }
