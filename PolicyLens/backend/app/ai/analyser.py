@@ -55,9 +55,8 @@ class AnalyserError(Exception):
     """
     pass
 
-
 _SYSTEM_PROMPT = """You are PolicyLens. Read the JSON policy evidence and return ONLY valid JSON:
-{"cards": [{"label": str, "badgeText": str, "badgeType": "safe"|"attention"|"danger", "detail": str}],
+{"cards": [{"category": str, "label": str, "badgeText": str, "badgeType": "safe"|"attention"|"danger", "detail": str}],
  "warnings": [str]}
 Rules:
 - One card per category in checklist.required_categories plus any category present in policy_evidence.
@@ -66,6 +65,26 @@ Rules:
 - warnings: up to 8 concrete restrictions, one sentence each.
 - Never invent facts not present in the evidence."""
 
+
+def _get_client() -> "genai.Client":
+    """
+    Builds (and caches) the genai.Client on first use. Raising here
+    rather than at import time keeps the missing-key failure inside
+    analyse_policy()'s try/except, so it surfaces as a normal
+    AnalyserError instead of crashing app startup.
+    """
+    global _client
+
+    if not _api_key:
+        raise AnalyserError("GEMINI_API_KEY is not configured.")
+
+    if _client is None:
+        _client = genai.Client(api_key=_api_key)
+
+    return _client
+
+# Expose the client builder safely for the crawler's supplementary AI calls
+get_client = _get_client
 
 def _get_client() -> "genai.Client":
     """
