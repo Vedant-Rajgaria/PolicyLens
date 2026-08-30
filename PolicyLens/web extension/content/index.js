@@ -135,76 +135,25 @@ const PolicyLens = (() => {
     // Analyze page
     // --------------------------------------------------------
 
-    function analyzePage() {
+ async function analyzePage() {
+  try {
+    const result = runExtraction();
+    const stats = getExtractionStats(result);
+    const payload = { success: true, data: result, stats };
 
-        try {
-
-            console.log(
-                "[PolicyLens Demo] Analyzing page..."
-            );
-
-
-            const result =
-                runExtraction();
-
-
-            const stats =
-                getExtractionStats(result);
-
-
-            console.log(
-                "[PolicyLens Demo] Extraction completed."
-            );
-
-
-            const payload = {
-
-                success: true,
-
-                data: result,
-
-                stats: stats
-
-            };
-
-
-            // Send the extracted + processed data to the backend instead
-            // of printing it. Fire-and-forget: the popup still renders
-            // from `payload` locally and doesn't wait on the network
-            // call, since backend connectivity isn't set up yet.
-            PolicyLensBackend.sendAnalysis(payload).then(sendResult => {
-
-                if (!sendResult.sent) {
-
-                    console.log(
-                        "[PolicyLens Demo] Backend not reachable yet — analysis kept local only."
-                    );
-                }
-            });
-
-
-            return payload;
-
-        } catch (error) {
-
-            console.error(
-                "[PolicyLens Demo] Extraction failed:",
-                error
-            );
-
-
-            return {
-
-                success: false,
-
-                error:
-                    error?.message ||
-                    String(error)
-
-            };
-        }
+    const backendResult = await PolicyLensBackend.sendAnalysis(payload);
+    if (backendResult.sent) {
+      payload.ai = backendResult.data;
+       // { cards, warnings } from the LLM
+       console.log("[PolicyLens] AI payload:", JSON.stringify(payload.ai));
+    } else {
+      payload.aiError = backendResult.error || "Backend unavailable";
     }
-
+    return payload;
+  } catch (error) {
+    return { success: false, error: error?.message || String(error) };
+  }
+}
 
     // --------------------------------------------------------
     // Public API
@@ -259,70 +208,25 @@ console.log(
 chrome.runtime.onMessage.addListener(
     (message, sender, sendResponse) => {
 
+        console.log("[PolicyLens Demo] Message received:", message);
 
-        console.log(
-            "[PolicyLens Demo] Message received:",
-            message
-        );
-
-
-        // ----------------------------------------------------
-        // Only respond to analyzePage
-        // ----------------------------------------------------
-
-        if (
-            !message ||
-            message.action !== "analyzePage"
-        ) {
-
+        if (!message || message.action !== "analyzePage") {
             return;
         }
 
-
-        // ----------------------------------------------------
-        // Run extraction
-        // ----------------------------------------------------
-
-        try {
-
-            console.log(
-                "[PolicyLens Demo] Running extraction..."
-            );
-
-
-            const result =
-                PolicyLens.analyzePage();
-
-
-            console.log(
-                "[PolicyLens Demo] Sending result to popup."
-            );
-
-
-            sendResponse(result);
-
-        } catch (error) {
-
-            console.error(
-                "[PolicyLens Demo] Message processing error:",
-                error
-            );
-
-
-            sendResponse({
-
-                success: false,
-
-                error:
-                    error?.message ||
-                    String(error)
-
+        PolicyLens.analyzePage()
+            .then(result => {
+                console.log("[PolicyLens Demo] Sending result to popup.");
+                sendResponse(result);
+            })
+            .catch(error => {
+                console.error("[PolicyLens Demo] Message processing error:", error);
+                sendResponse({
+                    success: false,
+                    error: error?.message || String(error)
+                });
             });
 
-        }
-
-
-        return true;
-
+        return true; // keeps sendResponse valid for the async work above
     }
 );

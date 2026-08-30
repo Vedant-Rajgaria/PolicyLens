@@ -23,47 +23,23 @@
  */
 
 const PolicyLensBackend = (() => {
-  // Placeholder — intentionally not a real, reachable endpoint yet.
-  const BACKEND_ENDPOINT = 'https://api.policylens.example/v1/analyze';
-
-  /**
-   * Sends the extraction payload (the same {success, data, stats} shape
-   * popup.js already renders from) to the backend.
-   *
-   * Never throws — callers can fire-and-forget this without try/catch.
-   * Returns { sent: true } on a successful POST, or { sent: false, ... }
-   * on any failure (network error, non-2xx response, endpoint not yet
-   * configured).
-   */
   async function sendAnalysis(payload) {
     try {
-      const response = await fetch(BACKEND_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+      const response = await new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ type: "POLICYLENS_ANALYZE", payload }, (result) => {
+          if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+          resolve(result);
+        });
       });
-
-      if (!response.ok) {
-        console.warn('[PolicyLens] Backend responded with status', response.status);
-        return { sent: false, status: response.status };
-      }
-
-      return { sent: true, status: response.status };
+      if (!response || !response.ok) return { sent: false, error: response?.error };
+      return { sent: true, data: response.data };
     } catch (error) {
-      // Expected for now — connectivity isn't configured yet. Log a
-      // short status line only; never log `payload` here, since that
-      // would just reintroduce the console dump this module replaces.
-      console.warn('[PolicyLens] Backend not reachable (connectivity not yet configured):', error.message);
+      console.warn('[PolicyLens] Backend not reachable:', error.message);
       return { sent: false, error: error.message };
     }
   }
-
-  return { sendAnalysis, BACKEND_ENDPOINT };
+  return { sendAnalysis };
 })();
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = PolicyLensBackend;
-}
-if (typeof window !== 'undefined') {
-  window.PolicyLensBackend = PolicyLensBackend;
-}
+if (typeof module !== 'undefined' && module.exports) module.exports = PolicyLensBackend;
+if (typeof window !== 'undefined') window.PolicyLensBackend = PolicyLensBackend;

@@ -1,30 +1,18 @@
 {
-    "manifest_version": 3,
-    "name": "PolicyLens Demo",
-    "version": "0.2.0",
-    "description": "PolicyLens browser-side extraction demo.",
-
-    "permissions": [
-        "activeTab"
+  "manifest_version": 3,
+  "name": "PolicyLens Demo",
+  "version": "0.2.0",
+  "description": "PolicyLens browser-side extraction demo.",
+  "permissions": ["activeTab"],
+  "host_permissions": ["http://localhost:8000/*"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup/index.html" },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": [
+      "content/policyVocabulary.js", "content/siteAdapters.js", "content/extractor.js",
+      "content/cleaner.js", "content/detector.js", "content/backendClient.js", "content/index.js"
     ],
-
-    "action": {
-        "default_popup": "popup/index.html"
-    },
-
-    "content_scripts": [
-        {
-            "matches": ["<all_urls>"],
-            "js": [
-                "content/policyVocabulary.js",
-                "content/siteAdapters.js",
-                "content/extractor.js",
-                "content/cleaner.js",
-                "content/detector.js",
-                "content/backendClient.js",
-                "content/index.js"
-            ],
-            "run_at": "document_idle"
-        }
-    ]
+    "run_at": "document_idle"
+  }]
 }
