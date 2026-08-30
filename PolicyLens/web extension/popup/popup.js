@@ -283,17 +283,17 @@ function renderAiResults(response) {
         response.data || {};
 
 
-    if (data.ai && data.ai.cards) {
+    if (response.ai && response.ai.cards) {
 
         status.textContent =
             "✓ AI analysis complete";
 
         renderPolicySections(
-            data.ai.cards
+            response.ai.cards
         );
 
         renderWarningsFromAi(
-            data.ai.warnings
+            response.ai.warnings
         );
 
         return;
@@ -305,11 +305,11 @@ function renderAiResults(response) {
     // so the popup still has something useful in the warnings panel.
     console.warn(
         "[PolicyLens] AI analysis unavailable:",
-        data.aiError
+        response.aiError
     );
 
-    status.textContent = data.aiError
-        ? `✓ Extraction complete — AI analysis unavailable (${data.aiError})`
+    status.textContent = response.aiError
+        ? `✓ Extraction complete — AI analysis unavailable (${response.aiError})`
         : "✓ Extraction complete — AI analysis unavailable";
 
     renderWarnings(
