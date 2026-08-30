@@ -23,6 +23,12 @@
  */
 
 const PolicyLensExtractor = (() => {
+  // Site adapter is optional — if it isn't loaded (e.g. a plain unit test
+  // of this file), extraction just falls back to the whole page.
+  const siteAdapter = typeof PolicyLensSiteAdapter !== 'undefined'
+    ? PolicyLensSiteAdapter
+    : (typeof require === 'function' ? require('./siteAdapters') : { getContext: () => ({ site: 'generic', root: document.body, isContentExcluded: () => false, isLinkExcluded: () => false }) });
+
   // Tags whose subtree never contains human-readable policy text, or whose
   // content can't/shouldn't be read as text (scripts, styles, canvases...).
   const NOISE_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'CANVAS', 'IFRAME']);
@@ -277,9 +283,15 @@ const PolicyLensExtractor = (() => {
   // keep the traversal logic auditable.
   // ---------------------------------------------------------------------
 
-  function traverseForContent(el, results, headingTracker) {
+  function traverseForContent(el, results, headingTracker, isExcluded) {
     if (!el || el.nodeType !== 1) return;
     if (NOISE_TAGS.has(el.tagName)) return;
+    // Site-adapter exclusion (section: site optimization) — skip known
+    // non-policy regions (reviews, recommendation rails, nav/footer chrome)
+    // entirely on recognized sites, rather than emitting and down-ranking
+    // them later. This is the single biggest lever on irrelevant results
+    // for real product pages, which are dominated by review/UGC text.
+    if (isExcluded && isExcluded(el)) return;
 
     if (HEADING_TAGS.has(el.tagName) || isHeadingLikeGeneric(el)) {
       const text = getOwnText(el);
@@ -289,7 +301,7 @@ const PolicyLensExtractor = (() => {
         headingTracker.setLast(record.text);
       }
       for (const child of el.children) {
-        if (!INLINE_TAGS.has(child.tagName)) traverseForContent(child, results, headingTracker);
+        if (!INLINE_TAGS.has(child.tagName)) traverseForContent(child, results, headingTracker, isExcluded);
       }
       return;
     }
@@ -313,7 +325,7 @@ const PolicyLensExtractor = (() => {
 
     for (const child of el.children) {
       if (INLINE_TAGS.has(child.tagName)) continue; // already merged into ownText above
-      traverseForContent(child, results, headingTracker);
+      traverseForContent(child, results, headingTracker, isExcluded);
     }
   }
 
@@ -323,8 +335,9 @@ const PolicyLensExtractor = (() => {
   // prevents the link itself from being recorded.
   // ---------------------------------------------------------------------
 
-  function collectLinks() {
-    const anchors = Array.from(document.querySelectorAll('a[href]'));
+  function collectLinks(root, isExcluded) {
+    const anchors = Array.from(root.querySelectorAll('a[href]'))
+      .filter(a => !(isExcluded && isExcluded(a)));
     return anchors
       .map(a => ({
         text: (a.textContent || '').replace(/\s+/g, ' ').trim(),
@@ -342,8 +355,9 @@ const PolicyLensExtractor = (() => {
   // Nothing here is ever clicked, submitted, or activated.
   // ---------------------------------------------------------------------
 
-  function collectInteractiveElements() {
-    const candidates = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR));
+  function collectInteractiveElements(isExcluded) {
+    const candidates = Array.from(document.querySelectorAll(INTERACTIVE_SELECTOR))
+      .filter(el => !(isExcluded && isExcluded(el)));
     return candidates
       .map(el => ({
         type: el.tagName.toLowerCase(),
@@ -360,7 +374,7 @@ const PolicyLensExtractor = (() => {
   // Page metadata (section 22)
   // ---------------------------------------------------------------------
 
-  function getPageMetadata() {
+  function getPageMetadata(site) {
     const canonicalEl = document.querySelector('link[rel="canonical"]');
     const descriptionEl = document.querySelector('meta[name="description"]');
     return {
@@ -368,7 +382,8 @@ const PolicyLensExtractor = (() => {
       domain: window.location.hostname,
       title: document.title || '',
       canonicalUrl: canonicalEl ? canonicalEl.href : null,
-      metaDescription: descriptionEl ? descriptionEl.getAttribute('content') : null
+      metaDescription: descriptionEl ? descriptionEl.getAttribute('content') : null,
+      site
     };
   }
 
@@ -377,16 +392,17 @@ const PolicyLensExtractor = (() => {
   // ---------------------------------------------------------------------
 
   function extractPage() {
+    const context = siteAdapter.getContext();
     const headingTracker = createHeadingTracker();
     const results = { blocks: [], headings: [], lists: [], tables: [] };
 
-    traverseForContent(document.body, results, headingTracker);
+    traverseForContent(context.root, results, headingTracker, context.isContentExcluded);
 
     return {
-      page: getPageMetadata(),
+      page: getPageMetadata(context.site),
       content: results,
-      links: collectLinks(),
-      interactiveElements: collectInteractiveElements(),
+      links: collectLinks(document.body, context.isLinkExcluded),
+      interactiveElements: collectInteractiveElements(context.isLinkExcluded),
       extractedAt: new Date().toISOString()
     };
   }

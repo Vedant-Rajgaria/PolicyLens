@@ -31,8 +31,14 @@ const PolicyLensDetector = (() => {
   // 0–1 confidence range. Tunable — a higher ceiling makes the detector
   // more conservative about calling something high-confidence.
   const CONFIDENCE_CEILING = 8;
-  const MIN_SECTION_CONFIDENCE = 0.25;
+  const MIN_SECTION_CONFIDENCE = 0.35;
   const NOISE_PENALTY_FACTOR = 0.3;
+  // A single incidental body-text mention of a vocabulary term (e.g. a
+  // sentence using the word "return" in passing) is the main remaining
+  // source of false positives once obvious noise regions are excluded.
+  // Require either repeated body evidence or corroboration from a
+  // heading/URL/class-name hint before body-term score counts at all.
+  const MIN_BODY_HITS_WITHOUT_CORROBORATION = 2;
 
   function hasConditionIndicator(text) {
     const lower = (text || '').toLowerCase();
@@ -68,11 +74,22 @@ const PolicyLensDetector = (() => {
       let score = 0;
 
       const bodyHits = def.terms.reduce((count, term) => count + (lowerBody.includes(term) ? 1 : 0), 0);
-      score += Math.min(bodyHits, MAX_BODY_TERM_HITS) * WEIGHTS.bodyTerm;
+      const headingMatch = def.terms.some(term => lowerHeading.includes(term));
+      const urlMatch = def.urlHints.some(hint => lowerUrl.includes(hint));
+      const classMatch = def.classHints.some(hint => lowerIdClass.includes(hint));
+      const hasCorroboration = headingMatch || urlMatch || classMatch;
 
-      if (def.terms.some(term => lowerHeading.includes(term))) score += WEIGHTS.headingTerm;
-      if (def.urlHints.some(hint => lowerUrl.includes(hint))) score += WEIGHTS.urlHint;
-      if (def.classHints.some(hint => lowerIdClass.includes(hint))) score += WEIGHTS.classHint;
+      // A lone body mention with no other signal is exactly the pattern
+      // that produced "CHECK" cards off casual/incidental keyword use
+      // (a review saying "I had to return it..."). Only count body
+      // evidence once it's either repeated or backed by another signal.
+      if (bodyHits > 0 && (hasCorroboration || bodyHits >= MIN_BODY_HITS_WITHOUT_CORROBORATION)) {
+        score += Math.min(bodyHits, MAX_BODY_TERM_HITS) * WEIGHTS.bodyTerm;
+      }
+
+      if (headingMatch) score += WEIGHTS.headingTerm;
+      if (urlMatch) score += WEIGHTS.urlHint;
+      if (classMatch) score += WEIGHTS.classHint;
 
       if (score > 0) scores[category] = score;
     }
@@ -121,25 +138,47 @@ const PolicyLensDetector = (() => {
     });
   }
 
+  // Ceiling on how many statements a single category card shows. The
+  // detector can legitimately find a dozen+ matching blocks on a long
+  // page; showing all of them turns a "here's what you need to know"
+  // card back into the wall of text this tool exists to avoid.
+  const MAX_BLOCKS_PER_SECTION = 6;
+
   function buildPolicySections(classifiedBlocks) {
     const grouped = {};
     for (const block of classifiedBlocks) {
       if (!block.category || block.confidence < MIN_SECTION_CONFIDENCE) continue;
       if (!grouped[block.category]) {
-        grouped[block.category] = { category: block.category, confidences: [], blocks: [] };
+        grouped[block.category] = { category: block.category, entries: [] };
       }
       // Preserve the complete statement rather than reducing it to a
       // fragment (section 13) — especially important when hasCondition is
       // true (section 14).
-      grouped[block.category].blocks.push(block.text);
-      grouped[block.category].confidences.push(block.confidence);
+      grouped[block.category].entries.push({
+        text: block.text,
+        confidence: block.confidence,
+        hasCondition: block.hasCondition
+      });
     }
 
-    return Object.values(grouped).map(group => ({
-      category: group.category,
-      confidence: Number((group.confidences.reduce((a, b) => a + b, 0) / group.confidences.length).toFixed(2)),
-      blocks: group.blocks
-    }));
+    return Object.values(grouped).map(group => {
+      // Strongest and/or condition-bearing statements first, then cap —
+      // conditions (non-refundable, within X days, etc.) are the highest-
+      // value lines for a user deciding whether to buy, so they're never
+      // the ones trimmed off.
+      const ranked = group.entries
+        .slice()
+        .sort((a, b) => (b.hasCondition - a.hasCondition) || (b.confidence - a.confidence));
+      const kept = ranked.slice(0, MAX_BLOCKS_PER_SECTION);
+      const omitted = ranked.length - kept.length;
+
+      return {
+        category: group.category,
+        confidence: Number((group.entries.reduce((sum, e) => sum + e.confidence, 0) / group.entries.length).toFixed(2)),
+        blocks: kept.map(e => e.text),
+        omittedCount: omitted > 0 ? omitted : 0
+      };
+    }).sort((a, b) => b.confidence - a.confidence);
   }
 
   // -----------------------------------------------------------------
@@ -157,7 +196,7 @@ const PolicyLensDetector = (() => {
     return applyNoisePenalty(rawScore, link);
   }
 
-  function rankLinks(links, pageContext, limit = 25) {
+  function rankLinks(links, pageContext, limit = 12) {
     return links
       .map(link => ({ ...link, relevanceScore: scoreLink(link, pageContext) }))
       .filter(link => link.relevanceScore > 0)

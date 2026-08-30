@@ -18,7 +18,12 @@ const PolicyLensCleaner = (() => {
   const HARD_NOISE_CLASS_HINTS = [
     'cookie', 'gdpr', 'consent', 'advert', 'sponsor', 'social-share',
     'recommendation', 'related-product', 'tracking-pixel', 'analytics',
-    'newsletter-popup', 'chat-widget'
+    'newsletter-popup', 'chat-widget',
+    // E-commerce engagement rails: near-universal noise for a policy
+    // extractor since they're UGC/upsell text, not the seller's own
+    // policy statements, even when they happen to mention "return" etc.
+    'review', 'rating', 'carousel', 'similar-product', 'also-bought',
+    'also-viewed', 'you-may-like', 'cross-sell', 'upsell', 'breadcrumb'
   ];
 
   function normalizeText(text) {

@@ -1,35 +1,30 @@
 {
     "manifest_version": 3,
-
-    "name": "PolicyLens (Dev)",
-
-    "version": "0.1.0",
-
-    "description": "Know what you're agreeing to.",
+    "name": "PolicyLens Demo",
+    "version": "0.2.0",
+    "description": "PolicyLens browser-side extraction demo.",
 
     "permissions": [
-        "activeTab",
-        "scripting"
-    ],
-
-    "host_permissions": [
-        "http://localhost:8000/*"
+        "activeTab"
     ],
 
     "action": {
-        "default_popup": "src/UI/index.html"
+        "default_popup": "popup/index.html"
     },
 
     "content_scripts": [
         {
             "matches": ["<all_urls>"],
             "js": [
-                "src/content/policyVocabulary.js",
-                "src/content/extractor.js",
-                "src/content/cleaner.js",
-                "src/content/detector.js",
-                "src/content/index.js"
-            ]
+                "content/policyVocabulary.js",
+                "content/siteAdapters.js",
+                "content/extractor.js",
+                "content/cleaner.js",
+                "content/detector.js",
+                "content/backendClient.js",
+                "content/index.js"
+            ],
+            "run_at": "document_idle"
         }
     ]
 }

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>PolicyLens</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+</head>
+
+
+<body>
+
+    <div class="container">
+
+
+        <!-- HEADER -->
+
+        <header>
+
+            <div class="logo">
+                🛡️
+            </div>
+
+            <div>
+
+                <h1>
+                    PolicyLens
+                </h1>
+
+                <p>
+                    Know what you're agreeing to.
+                </p>
+
+            </div>
+
+        </header>
+
+
+
+        <!-- CURRENT PAGE -->
+
+        <div class="page-info">
+
+            <span class="label">
+                CURRENT PAGE
+            </span>
+
+            <div id="page-name">
+                Loading page info...
+            </div>
+
+            <div
+                id="site-badge"
+                class="site-badge hidden"
+            >
+            </div>
+
+        </div>
+
+
+
+        <!-- ANALYZE BUTTON -->
+
+        <button id="analyze-btn">
+            Analyze with PolicyLens
+        </button>
+
+
+
+        <!-- STATUS -->
+
+        <div id="status">
+        </div>
+
+
+
+        <!-- RESULTS -->
+
+        <div
+            id="results"
+            class="hidden"
+        >
+
+
+            <!-- POLICY SUMMARY -->
+
+            <h2>
+                Policy Information
+            </h2>
+
+            <div id="summary-line" class="summary-line">
+            </div>
+
+
+            <!-- DYNAMIC POLICY CARDS -->
+
+            <div id="cards-container">
+            </div>
+
+
+
+            <!-- IMPORTANT INFORMATION -->
+
+            <div class="warning">
+
+                <h3>
+                    ⚠️ Things you should know
+                </h3>
+
+                <ul id="warning-list">
+                </ul>
+
+            </div>
+
+
+
+            <!-- RELEVANT POLICY LINKS -->
+
+            <div class="links-section">
+
+                <h3>
+                    🔗 Relevant Policy Links
+                </h3>
+
+                <div id="links-container">
+                </div>
+
+            </div>
+
+
+
+            <!-- EXTRACTION DETAILS -->
+
+            <details class="debug-section">
+
+                <summary>
+                    Extraction Details
+                </summary>
+
+
+                <div id="stats">
+                </div>
+
+
+                <pre id="raw-output">
+                </pre>
+
+            </details>
+
+
+        </div>
+
+
+    </div>
+
+
+    <!-- POPUP JAVASCRIPT -->
+
+    <script src="popup.js"></script>
+
+</body>
+
+</html>
