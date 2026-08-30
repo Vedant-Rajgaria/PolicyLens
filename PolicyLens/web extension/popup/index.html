@@ -16,7 +16,7 @@
 
     <div class="widget-outer-container">
 
-        <!-- DECORATIVE BRAND RIBBONS (Figma Exact Overlap & Positions) -->
+        <!-- DECORATIVE BRAND RIBBONS (Animated Corner Ribbons) -->
         <div class="decorative-ribbon ribbon-blue"></div>
         <div class="decorative-ribbon ribbon-red"></div>
         <div class="decorative-ribbon ribbon-green"></div>
@@ -25,7 +25,20 @@
         <!-- MAIN CARD CONTAINER (Figma: Popup #e2ecfe, 380px, radius 24px) -->
         <div class="policylens-card" id="policylens-card">
 
-            <!-- HEADER (Figma: PolicyLens Heading + Window Control Dots) -->
+            <!-- AESTHETIC INFO TOAST (Green button modal) -->
+            <div class="info-toast hidden" id="info-toast">
+                <div class="info-toast-content">
+                    <div class="info-toast-header">
+                        <span class="info-toast-icon">✨</span>
+                        <span class="info-toast-title">PolicyLens Note</span>
+                        <button class="info-toast-close" id="info-toast-close" type="button" aria-label="Close Note">&times;</button>
+                    </div>
+                    <p class="info-toast-msg">This button is for aesthetic purposes only.</p>
+                    <p class="info-toast-credits">Designed by <strong>Vedant &amp; Darsh</strong>.</p>
+                </div>
+            </div>
+
+            <!-- HEADER (Figma: PolicyLens Heading + Interactive Window Control Dots) -->
             <header class="card-header">
                 <div class="header-titles">
                     <h1 class="card-title">PolicyLens</h1>
@@ -33,9 +46,9 @@
                 </div>
 
                 <div class="window-controls">
-                    <span class="dot dot-close" title="Close"></span>
-                    <span class="dot dot-minimize" title="Minimise"></span>
-                    <span class="dot dot-expand" title="Expand"></span>
+                    <button class="dot dot-close" id="dot-close" title="Close Window" type="button"></button>
+                    <button class="dot dot-minimize" id="dot-minimize" title="Minimize Window" type="button"></button>
+                    <button class="dot dot-expand" id="dot-info" title="Aesthetic Info" type="button"></button>
                 </div>
             </header>
 
@@ -52,7 +65,7 @@
             </div>
 
             <!-- ANALYZE BUTTON (Figma: Analyze Interactive #2563eb, radius 9px, 13.6px bold) -->
-            <button id="analyze-btn" class="primary-btn">
+            <button id="analyze-btn" class="primary-btn" type="button">
                 Analyze with PolicyLens
             </button>
 
@@ -110,7 +123,7 @@
 
     </div>
 
-    <!-- POPUP JAVASCRIPT (Untouched Functional Source of Truth) -->
+    <!-- POPUP JAVASCRIPT (Interactive Functionality) -->
     <script src="popup.js"></script>
 
 </body>

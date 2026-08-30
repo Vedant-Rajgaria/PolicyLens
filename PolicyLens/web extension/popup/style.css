@@ -84,13 +84,16 @@ body {
   justify-content: center;
   overflow: visible;
   background: transparent;
+  perspective: 1000px;
 }
 
-/* --- Decorative Ribbons (Figma exact geometric vectors) --- */
+/* --- Decorative Corner Ribbons (Animated Flower/Explosion Bloom) --- */
 .decorative-ribbon {
   position: absolute;
   pointer-events: none;
   z-index: 1;
+  will-change: transform, opacity;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease;
 }
 
 /* Top-Left Red Ribbon (Figma Frame 38 / Frame 19) */
@@ -102,6 +105,7 @@ body {
   background: var(--brand-red-ribbon);
   border-radius: 24px 0 0 24px;
   box-shadow: inset 0 4px 4px rgba(0, 0, 0, 0.25);
+  animation: ribbonInRed 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Top-Right Blue Ribbon (Figma Frame 39 / Frame 20) */
@@ -112,6 +116,7 @@ body {
   height: 90px;
   background: var(--brand-blue-ribbon);
   border-radius: 0 40px 40px 0;
+  animation: ribbonInBlue 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Bottom-Left Green Ribbon (Figma Frame 40 / Frame 21) */
@@ -122,6 +127,7 @@ body {
   height: 48px;
   background: var(--brand-green-ribbon);
   border-radius: 0 0 0 28px;
+  animation: ribbonInGreen 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 /* Bottom-Right Yellow Ribbon (Figma Frame 41 / Frame 22) */
@@ -133,6 +139,28 @@ body {
   background: var(--brand-yellow-ribbon);
   border-radius: 0 16px 16px 0;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  animation: ribbonInYellow 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Corner Ribbon Opening Keyframes */
+@keyframes ribbonInBlue {
+  from { transform: translate(-100px, 80px) scale(0.4); opacity: 0; }
+  to { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+@keyframes ribbonInRed {
+  from { transform: translate(100px, 80px) scale(0.4); opacity: 0; }
+  to { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+@keyframes ribbonInGreen {
+  from { transform: translate(100px, -80px) scale(0.4); opacity: 0; }
+  to { transform: translate(0, 0) scale(1); opacity: 1; }
+}
+
+@keyframes ribbonInYellow {
+  from { transform: translate(-100px, -80px) scale(0.4); opacity: 0; }
+  to { transform: translate(0, 0) scale(1); opacity: 1; }
 }
 
 /* --- Main PolicyLens Card (Figma: Popup 380px Frame) --- */
@@ -143,10 +171,99 @@ body {
   background-color: var(--card-bg);
   border-radius: var(--radius-card);
   padding: 20px 20px 18px 20px;
-  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.35), 0 4px 12px rgba(37, 99, 235, 0.15);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  animation: cardEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* --- Aesthetic Info Toast (Designed by Vedant & Darsh) --- */
+.info-toast {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.25), 0 4px 12px rgba(37, 99, 235, 0.18);
+  padding: 14px 16px;
+  animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.info-toast.hidden {
+  display: none !important;
+}
+
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translateY(-10px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.info-toast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.info-toast-icon {
+  font-size: 14px;
+  margin-right: 6px;
+}
+
+.info-toast-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1F2937;
+  letter-spacing: -0.02em;
+  flex: 1;
+}
+
+.info-toast-close {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: #6B7280;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.info-toast-close:hover {
+  color: #111827;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.info-toast-msg {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #374151;
+  line-height: 1.4;
+  margin-bottom: 6px;
+}
+
+.info-toast-credits {
+  font-size: 10.5px;
+  color: #6B7280;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  padding-top: 6px;
+}
+
+.info-toast-credits strong {
+  color: #2563EB;
+  font-weight: 700;
 }
 
 /* --- Header Section (Figma Frame 1 / Frame 2) --- */
@@ -155,6 +272,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 14px;
+  user-select: none;
 }
 
 .header-titles {
@@ -191,14 +309,22 @@ body {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  display: inline-block;
+  border: none;
   cursor: pointer;
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  padding: 0;
+  outline: none;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease, filter 0.18s ease;
+  position: relative;
 }
 
 .dot:hover {
-  transform: scale(1.15);
-  opacity: 0.85;
+  transform: scale(1.22);
+  opacity: 0.95;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+
+.dot:active {
+  transform: scale(0.95);
 }
 
 .dot-close { background-color: var(--dot-close); }
@@ -215,6 +341,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .page-info-header {
@@ -255,12 +382,11 @@ body {
   line-height: 1.2;
   letter-spacing: 0.03em;
   white-space: nowrap;
+  transition: all 0.2s ease;
 }
 
 /* --- Primary Analyze Button (Figma Frame 7 / Frame 24) --- */
-/* Solid, bold, full height in both compact & expanded states */
-button,
-.primary-btn,
+button.primary-btn,
 #analyze-btn {
   width: 100% !important;
   height: 42px !important;
@@ -281,30 +407,29 @@ button,
   justify-content: center;
   gap: 8px;
   box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
-  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
   outline: none;
   flex-shrink: 0;
 }
 
-button:hover,
-.primary-btn:hover,
+button.primary-btn:hover,
 #analyze-btn:hover {
   background-color: var(--brand-primary-hover);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.42);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.44);
+  transform: translateY(-1px);
 }
 
-button:active,
-.primary-btn:active,
+button.primary-btn:active,
 #analyze-btn:active {
   background-color: var(--brand-primary-active);
-  transform: translateY(1px);
+  transform: translateY(1px) scale(0.99);
 }
 
-button:disabled,
-.primary-btn:disabled,
+button.primary-btn:disabled,
 #analyze-btn:disabled {
   opacity: 0.75;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* --- Status Text (Figma Frame 9) --- */
@@ -317,6 +442,7 @@ button:disabled,
   line-height: 1.35;
   letter-spacing: -0.01em;
   margin-top: 10px;
+  transition: color 0.2s ease;
 }
 
 /* --- Results Section (Figma Expanded Popup) --- */
@@ -325,15 +451,15 @@ button:disabled,
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: resultsFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .hidden {
   display: none !important;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+@keyframes resultsFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -371,6 +497,12 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.policy-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.08);
 }
 
 .card-top,
@@ -388,7 +520,7 @@ h2 {
   letter-spacing: -0.015em;
 }
 
-/* Pill Badges inside Policy Cards (Figma Frame 37 / Rectangle 'info') */
+/* Pill Badges inside Policy Cards */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -516,6 +648,12 @@ h2 {
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 11px;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.policy-link:hover {
+  transform: translateX(2px);
+  border-color: var(--brand-primary);
 }
 
 .policy-link a {

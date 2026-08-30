@@ -125,13 +125,6 @@ async function analyzePage() {
         );
 
 
-        // NOTE: index.js now awaits the backend call (extraction ->
-        // backend -> AI) before calling sendResponse, so this callback
-        // only fires once the full round trip is done. The message
-        // channel is kept open on the content-script side via
-        // `return true`, so the extra latency here is expected — the
-        // status line below is what keeps the popup from looking stuck.
-
         status.textContent =
             "Sending to PolicyLens backend for analysis...";
 
@@ -192,9 +185,7 @@ async function analyzePage() {
 
 
                 // ==========================================
-                // SUCCESS (local extraction succeeded — the
-                // AI step may or may not have succeeded on top
-                // of it, handled below by renderAiResults)
+                // SUCCESS
                 // ==========================================
 
                 console.log(
@@ -203,7 +194,7 @@ async function analyzePage() {
 
 
                 analyzeButton.textContent =
-                    "Analysis Complete";
+                    "Analyze again";
 
                 analyzeButton.disabled = false;
 
@@ -216,8 +207,6 @@ async function analyzePage() {
                 }
 
 
-                // Render local extraction results first (always
-                // available, doesn't depend on the backend/AI call).
                 renderSummary(
                     response.data.policySections
                 );
@@ -239,11 +228,6 @@ async function analyzePage() {
                     response.data
                 );
 
-
-                // Render AI results if the backend call succeeded, or
-                // fall back to local warning extraction + a status
-                // message if it didn't. This also sets the final
-                // status line, so it must run after the block above.
                 renderAiResults(response);
 
             }
@@ -266,15 +250,6 @@ async function analyzePage() {
 
 // ==================================================
 // RENDER AI RESULTS (from backend /analyze -> Gemini)
-// ==================================================
-//
-// response.data.ai            -> { cards, warnings } on success
-// response.data.aiError       -> string reason on failure
-//
-// Both are set by index.js after it awaits
-// PolicyLensBackend.sendAnalysis(). If neither is present (e.g. an
-// older content script), this quietly falls back to the local
-// keyword-based warnings so the popup never shows a blank state.
 // ==================================================
 
 function renderAiResults(response) {
@@ -300,9 +275,6 @@ function renderAiResults(response) {
     }
 
 
-    // AI step didn't come back — keep the local extraction on screen
-    // (already rendered above) and fall back to keyword-based warnings
-    // so the popup still has something useful in the warnings panel.
     console.warn(
         "[PolicyLens] AI analysis unavailable:",
         response.aiError
@@ -353,14 +325,6 @@ function renderSummary(policySections) {
 
 // ==================================================
 // RENDER POLICY CARDS
-// ==================================================
-//
-// Handles two card shapes:
-//  1. Local scanner sections: { category, confidence, blocks, omittedCount }
-//  2. AI-generated cards:     { label, badgeText, badgeType, detail }
-//
-// renderAiResults() passes AI cards through this same function so the
-// card markup/styling stays in one place instead of being duplicated.
 // ==================================================
 
 function renderPolicySections(sections) {
@@ -461,8 +425,6 @@ function renderPolicySections(sections) {
 
         if (isAiCard) {
 
-            // AI cards carry one summarized detail line rather than a
-            // list of raw evidence blocks.
             const paragraph =
                 document.createElement("p");
 
@@ -473,7 +435,6 @@ function renderPolicySections(sections) {
 
         } else {
 
-            // Add policy statements
             (section.blocks || []).forEach(blockText => {
 
                 const paragraph =
@@ -511,11 +472,6 @@ function renderPolicySections(sections) {
 
 // ==================================================
 // RENDER WARNINGS — AI-GENERATED
-// ==================================================
-//
-// Used when the backend/AI call succeeds. AI warnings are already
-// short, deduplicated, prioritized sentences, so this just lists them
-// as-is (still capped, in case the model overproduces).
 // ==================================================
 
 function renderWarningsFromAi(warnings) {
@@ -578,11 +534,6 @@ function renderWarningsFromAi(warnings) {
 // ==================================================
 // RENDER WARNINGS — LOCAL KEYWORD FALLBACK
 // ==================================================
-//
-// Used only when the AI step is unavailable (backend down, no API
-// key configured, etc.), so the popup still surfaces something
-// useful instead of an empty warnings panel.
-// ==================================================
 
 function renderWarnings(policySections) {
 
@@ -644,9 +595,6 @@ function renderWarnings(policySections) {
                     word => lower.includes(word)
                 );
 
-            // Dedupe identical statements that scored into more than one
-            // category (e.g. a delivery line that also mentions payment)
-            // so it isn't listed twice.
             if (hasCondition && !seenText.has(lower)) {
 
                 seenText.add(lower);
@@ -848,7 +796,7 @@ function formatCategory(category) {
     return category
         .replace(/_/g, " ")
         .toLowerCase()
-        .replace(/\b\w/g, char =>
+        .replace(/ \w/g, char =>
             char.toUpperCase()
         );
 }
@@ -869,3 +817,38 @@ analyzeButton.addEventListener(
 // ==================================================
 
 loadPageInfo();
+
+
+// ==================================================
+// WINDOW CONTROLS & INFO TOAST (Designed by Vedant & Darsh)
+// ==================================================
+
+const dotClose = document.querySelector("#dot-close");
+const dotMinimize = document.querySelector("#dot-minimize");
+const dotInfo = document.querySelector("#dot-info");
+const infoToast = document.querySelector("#info-toast");
+const infoToastClose = document.querySelector("#info-toast-close");
+
+if (dotClose) {
+    dotClose.addEventListener("click", () => {
+        window.close();
+    });
+}
+
+if (dotMinimize) {
+    dotMinimize.addEventListener("click", () => {
+        window.close();
+    });
+}
+
+if (dotInfo && infoToast) {
+    dotInfo.addEventListener("click", () => {
+        infoToast.classList.remove("hidden");
+    });
+}
+
+if (infoToastClose && infoToast) {
+    infoToastClose.addEventListener("click", () => {
+        infoToast.classList.add("hidden");
+    });
+}S
