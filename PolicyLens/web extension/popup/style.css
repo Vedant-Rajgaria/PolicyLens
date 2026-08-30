@@ -1,208 +1,567 @@
+/* ==========================================================================
+   PolicyLens Chrome Extension - Premium Award-Winning Design Implementation
+   Typography: Plus Jakarta Sans (Modern Geometric Grotesque)
+   Visual Source of Truth: Figma Node 340-359
+   ========================================================================== */
+
+/* --- CSS Design Tokens --- */
+:root {
+  --font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Exact Figma Brand & Ribbon Colors */
+  --brand-primary: #2563EB;
+  --brand-primary-hover: #1D4ED8;
+  --brand-primary-active: #1E40AF;
+  --brand-blue-ribbon: #2E6CF6;
+  --brand-red-ribbon: #E63A2D;
+  --brand-green-ribbon: #3AAA4D;
+  --brand-yellow-ribbon: #FCBD08;
+
+  /* Exact Figma Surface Colors */
+  --card-bg: #E2ECFE;
+  --surface-white: #FFFFFF;
+  --surface-policy-card: #E3ECFF;
+
+  /* Exact Figma Typography Colors */
+  --text-heading: #1F2937;
+  --text-subheading: #6B7280;
+  --text-body: #4B5563;
+  --text-white: #FFFFFF;
+
+  /* Exact Figma Badge Colors */
+  --badge-general-bg: #64748B;
+  --badge-general-text: #FFFFFF;
+  --badge-safe-bg: #C4FECE;
+  --badge-safe-text: #166534;
+  --badge-attention-bg: #FFDEA3;
+  --badge-attention-text: #9A3412;
+  --badge-danger-bg: #FEE2E2;
+  --badge-danger-text: #991B1B;
+
+  /* Exact Figma Window Control Dots */
+  --dot-close: #E63A2D;
+  --dot-minimize: #FCBD08;
+  --dot-expand: #3AAA4D;
+
+  /* Exact Figma Radii */
+  --radius-card: 24px;
+  --radius-inner: 10px;
+  --radius-btn: 9px;
+  --radius-pill: 70px;
+}
+
+/* --- Base & Reset --- */
 * {
-    box-sizing: border-box;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
+html,
 body {
-    margin: 0;
-    width: 380px;
-    font-family: Arial, sans-serif;
-    background: #f5f7fb;
-    color: #1f2937;
+  margin: 0;
+  padding: 0;
+  width: 450px;
+  min-width: 450px;
+  max-width: 450px;
+  background: transparent;
+  background-color: transparent;
+  font-family: var(--font-family);
+  color: var(--text-heading);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.container {
-    padding: 20px;
+/* --- Outer Container (Figma: 450px width Frame) --- */
+.widget-outer-container {
+  position: relative;
+  width: 450px;
+  min-height: 298px;
+  padding: 27px 35px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: visible;
+  background: transparent;
 }
 
-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 20px;
+/* --- Decorative Ribbons (Figma exact geometric vectors) --- */
+.decorative-ribbon {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
 }
 
-.logo {
-    font-size: 32px;
+/* Top-Left Red Ribbon (Figma Frame 38 / Frame 19) */
+.ribbon-red {
+  top: 15px;
+  left: 20px;
+  width: 46px;
+  height: 98px;
+  background: var(--brand-red-ribbon);
+  border-radius: 24px 0 0 24px;
+  box-shadow: inset 0 4px 4px rgba(0, 0, 0, 0.25);
 }
 
-h1 {
-    margin: 0;
-    font-size: 22px;
+/* Top-Right Blue Ribbon (Figma Frame 39 / Frame 20) */
+.ribbon-blue {
+  top: 15px;
+  right: 15px;
+  width: 80px;
+  height: 90px;
+  background: var(--brand-blue-ribbon);
+  border-radius: 0 40px 40px 0;
 }
 
-header p {
-    margin: 4px 0 0;
-    color: #6b7280;
-    font-size: 13px;
+/* Bottom-Left Green Ribbon (Figma Frame 40 / Frame 21) */
+.ribbon-green {
+  bottom: 12px;
+  left: 12px;
+  width: 85px;
+  height: 48px;
+  background: var(--brand-green-ribbon);
+  border-radius: 0 0 0 28px;
 }
 
+/* Bottom-Right Yellow Ribbon (Figma Frame 41 / Frame 22) */
+.ribbon-yellow {
+  bottom: 12px;
+  right: 25px;
+  width: 32px;
+  height: 70px;
+  background: var(--brand-yellow-ribbon);
+  border-radius: 0 16px 16px 0;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Main PolicyLens Card (Figma: Popup 380px Frame) --- */
+.policylens-card {
+  position: relative;
+  z-index: 10;
+  width: 380px;
+  background-color: var(--card-bg);
+  border-radius: var(--radius-card);
+  padding: 20px 20px 18px 20px;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(37, 99, 235, 0.15);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+/* --- Header Section (Figma Frame 1 / Frame 2) --- */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.header-titles {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.card-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-heading);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.card-subtitle {
+  font-size: 12.2px;
+  font-weight: 500;
+  color: var(--text-subheading);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+/* Window Control Dots */
+.window-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+
+.dot {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.dot:hover {
+  transform: scale(1.15);
+  opacity: 0.85;
+}
+
+.dot-close { background-color: var(--dot-close); }
+.dot-minimize { background-color: var(--dot-minimize); }
+.dot-expand { background-color: var(--dot-expand); }
+
+/* --- Current Page Info Box (Figma Frame 10 / Frame 28) --- */
 .page-info {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 15px;
+  background-color: var(--surface-white);
+  border-radius: var(--radius-inner);
+  padding: 10px 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.page-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .label {
-    display: block;
-    font-size: 10px;
-    font-weight: bold;
-    color: #6b7280;
-    margin-bottom: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-subheading);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
+.page-name-text,
+#page-name {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--text-heading);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  word-break: break-word;
+}
+
+/* Site Badge / Pill Tag (Figma Frame 18 / Frame 30) */
 .site-badge {
-    display: inline-block;
-    margin-top: 8px;
-    padding: 3px 9px;
-    border-radius: 20px;
-    font-size: 10px;
-    font-weight: bold;
-    background: #eef2ff;
-    color: #4338ca;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background-color: var(--badge-general-bg);
+  color: var(--badge-general-text);
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
-.summary-line {
-    font-size: 12px;
-    color: #6b7280;
-    margin: 6px 0 10px;
+/* --- Primary Analyze Button (Figma Frame 7 / Frame 24) --- */
+/* Solid, bold, full height in both compact & expanded states */
+button,
+.primary-btn,
+#analyze-btn {
+  width: 100% !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  padding: 0 16px !important;
+  background-color: var(--brand-primary);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-family);
+  font-size: 13.6px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 42px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+  outline: none;
+  flex-shrink: 0;
 }
 
-.more-note {
-    margin: 6px 0 0;
-    font-size: 11px;
-    color: #9ca3af;
-    font-style: italic;
+button:hover,
+.primary-btn:hover,
+#analyze-btn:hover {
+  background-color: var(--brand-primary-hover);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.42);
 }
 
-button {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 9px;
-    background: #111827;
-    color: white;
-    font-size: 14px;
-    font-weight: bold;
-    cursor: pointer;
+button:active,
+.primary-btn:active,
+#analyze-btn:active {
+  background-color: var(--brand-primary-active);
+  transform: translateY(1px);
 }
 
-button:hover {
-    opacity: 0.9;
+button:disabled,
+.primary-btn:disabled,
+#analyze-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* --- Status Text (Figma Frame 9) --- */
+#status,
+.status-text {
+  text-align: center;
+  font-size: 11.2px;
+  font-weight: 500;
+  color: var(--text-subheading);
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  margin-top: 10px;
+}
+
+/* --- Results Section (Figma Expanded Popup) --- */
+.results-container {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .hidden {
-    display: none;
+  display: none !important;
 }
 
-#status {
-    margin-top: 10px;
-    font-size: 12px;
-    color: #6b7280;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
+/* Policy Summary Heading (Figma Frame 35) */
+.results-heading,
 h2 {
-    margin-top: 22px;
-    font-size: 15px;
+  font-size: 21.8px;
+  font-weight: 800;
+  color: var(--text-heading);
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+}
+
+.summary-line {
+  font-size: 11.2px;
+  font-weight: 500;
+  color: var(--text-subheading);
+  margin-top: -6px;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+/* Dynamic Policy Cards (Figma Frame 36 / Rectangle 'body') */
+.cards-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .policy-card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
+  background-color: var(--surface-policy-card);
+  border-radius: var(--radius-inner);
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.card-top,
+.card-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.policy-card p {
-    margin: 8px 0 0;
-    color: #4b5563;
-    font-size: 13px;
+.card-top strong,
+.card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.015em;
 }
 
+/* Pill Badges inside Policy Cards (Figma Frame 37 / Rectangle 'info') */
 .badge {
-    padding: 4px 7px;
-    border-radius: 20px;
-    font-size: 9px;
-    font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
-.safe {
-    background: #dcfce7;
-    color: #166534;
+.badge.safe,
+.badge-safe {
+  background-color: var(--badge-safe-bg);
+  color: var(--badge-safe-text);
 }
 
-.attention {
-    background: #fef3c7;
-    color: #92400e;
+.badge.attention,
+.badge-attention {
+  background-color: var(--badge-attention-bg);
+  color: var(--badge-attention-text);
 }
 
+.badge.danger,
+.badge-danger {
+  background-color: var(--badge-danger-bg);
+  color: var(--badge-danger-text);
+}
+
+/* Policy Card Content Paragraphs */
+.policy-card p,
+.card-text {
+  font-size: 10.8px;
+  font-weight: 500;
+  color: var(--text-body);
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  text-align: justify;
+}
+
+.more-note,
+.card-note {
+  font-size: 10px;
+  color: #9CA3AF;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* --- Warning Section --- */
 .warning {
-    margin-top: 15px;
-    padding: 15px;
-    border-radius: 10px;
-    background: #fff7ed;
-    border: 1px solid #fed7aa;
+  background-color: #FFF7ED;
+  border: 1px solid #FED7AA;
+  border-radius: var(--radius-inner);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
+.warning-title,
 .warning h3 {
-    margin-top: 0;
-    font-size: 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #9A3412;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
 }
 
+.warning-list,
+.warning ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warning-list li,
 .warning li {
-    margin-bottom: 7px;
-    font-size: 12px;
-    line-height: 1.4;
+  font-size: 10.8px;
+  font-weight: 500;
+  color: #431407;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+  position: relative;
+  padding-left: 14px;
 }
 
+.warning-list li::before,
+.warning li::before {
+  content: "•";
+  position: absolute;
+  left: 2px;
+  color: #EA580C;
+  font-weight: bold;
+}
+
+/* --- Policy Links Section --- */
 .links-section {
-    margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
+.links-title,
 .links-section h3 {
-    font-size: 14px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-heading);
+  letter-spacing: -0.015em;
+}
+
+.links-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .policy-link {
-    display: block;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 7px;
-    font-size: 12px;
+  background-color: var(--surface-white);
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 11px;
 }
 
 .policy-link a {
-    color: #2563eb;
-    text-decoration: none;
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 600;
+  word-break: break-all;
 }
 
+.policy-link a:hover {
+  text-decoration: underline;
+}
+
+/* --- Debug / Extraction Details Section --- */
 .debug-section {
-    margin-top: 18px;
-    font-size: 12px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-subheading);
 }
 
-#stats {
-    margin-top: 10px;
-    line-height: 1.6;
+.debug-summary {
+  cursor: pointer;
+  font-weight: 600;
+  outline: none;
+  padding: 4px 0;
 }
 
+.stats-box {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 6px;
+  line-height: 1.5;
+  font-size: 10px;
+}
+
+.raw-output-box,
 #raw-output {
-    max-height: 250px;
-    overflow: auto;
-    background: #111827;
-    color: #e5e7eb;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 9px;
-    white-space: pre-wrap;
+  max-height: 200px;
+  overflow: auto;
+  background: #111827;
+  color: #E5E7EB;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-family: monospace;
+  white-space: pre-wrap;
+  margin-top: 8px;
 }

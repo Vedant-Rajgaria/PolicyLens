@@ -1,44 +1,6 @@
 /**
- * PolicyLens — floating in-page widget (content script)
- *
- * ─────────────────────────────────────────────────────────────────────────
- * WHY THE OLD "ANALYZE" BUTTON DID NOTHING:
- *
- * This script runs as a content script, injected straight into the page —
- * it already has full DOM access. But the old Analyze handler asked the
- * BACKGROUND SERVICE WORKER to do the work instead, via:
- *
- *     chrome.runtime.sendMessage({ action: "analyzeLocal" }, ...)
- *     chrome.runtime.sendMessage({ action: "getSiteContext" }, ...)
- *
- * background.js has no DOM access at all, and per this project's own
- * architecture it only understands ONE message shape:
- *
- *     { type: "POLICYLENS_ANALYZE", payload }   →  relays a fetch() to
- *                                                   http://localhost:8000/analyze
- *
- * "analyzeLocal" and "getSiteContext" match nothing, so nothing ever
- * responds — the popup box version only worked because THAT flow
- * (index.js) does extraction locally and only messages the background
- * worker with the correct shape once it already has the data.
- *
- * FIX: do the extraction right here (this file has DOM access), and only
- * use messaging for the one thing that legitimately needs to leave the
- * page — the backend call — via the already-correct backendClient.js
- * helper (window.PolicyLensBackend.sendAnalysis).
- *
- * REQUIRES this manifest.json load order (content_scripts.js), same as
- * index.js needs — floatingUI.js just needs to come after these globals
- * are defined:
- *
- *   "content/policyVocabulary.js",
- *   "content/siteAdapters.js",
- *   "content/extractor.js",
- *   "content/cleaner.js",
- *   "content/detector.js",
- *   "content/backendClient.js",
- *   "content/floatingUI.js"
- * ─────────────────────────────────────────────────────────────────────────
+ * PolicyLens — Floating In-Page Widget (Content Script)
+ * Award-Winning UI/UX Typography (Plus Jakarta Sans) + Full High-Fidelity Vector Logo
  */
 
 (() => {
@@ -64,39 +26,47 @@
 
     const root = document.createElement("div");
     root.id = "policylens-floating-root";
-
     const shadow = root.attachShadow({ mode: "open" });
 
     // ============================================================
-    // STYLE
+    // STYLES (Plus Jakarta Sans Typography & Isolated CSS)
     // ============================================================
 
     const style = document.createElement("style");
     style.textContent = `
-        * { box-sizing: border-box; }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* --- Floating Launcher Button (Full Logo Display) --- */
         #launcher {
             position: fixed;
             right: 24px;
             bottom: 24px;
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            border: 1px solid #dadce0;
-            background: #ffffff;
-            box-shadow: 0 4px 14px rgba(60,64,67,.20), 0 2px 5px rgba(60,64,67,.12);
+            border: 1px solid rgba(255, 255, 255, 0.85);
+            background: #FFFFFF;
+            box-shadow: 0 10px 30px rgba(37, 99, 235, 0.28), 0 4px 12px rgba(0, 0, 0, 0.08);
             cursor: grab;
             z-index: 2147483647;
             touch-action: none;
-            transition: transform .18s ease, box-shadow .18s ease;
+            transition: transform .2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow .2s ease;
+            padding: 0;
+            overflow: hidden;
         }
 
         #launcher:hover {
-            transform: scale(1.06);
-            box-shadow: 0 7px 20px rgba(60,64,67,.24), 0 3px 8px rgba(60,64,67,.14);
+            transform: scale(1.08);
+            box-shadow: 0 14px 36px rgba(37, 99, 235, 0.38), 0 6px 16px rgba(0, 0, 0, 0.12);
         }
 
         #launcher.dragging {
@@ -106,199 +76,523 @@
         }
 
         .launcher-logo {
-            width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 9px; background: #f1f3f4; font-size: 17px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             pointer-events: none;
         }
 
-        .launcher-logo img, .logo img {
+        .launcher-logo svg {
+            width: 36px;
+            height: 36px;
             display: block;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
         }
 
+        /* --- Floating Panel Window --- */
         #panel {
             position: fixed;
             right: 24px;
             bottom: 24px;
-            width: 360px;
-            max-height: 640px;
+            width: 450px;
+            max-height: 85vh;
             display: none;
             flex-direction: column;
-            overflow: hidden;
-            border: 1px solid #dadce0;
-            border-radius: 18px;
-            background: #ffffff;
-            color: #202124;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            box-shadow: 0 10px 35px rgba(60,64,67,.22), 0 3px 10px rgba(60,64,67,.14);
+            overflow: visible;
+            background: transparent;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             z-index: 2147483647;
+            animation: panelFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        #panel.open { display: flex; }
+        #panel.open {
+            display: flex;
+        }
 
-        .header {
-            height: 58px; min-height: 58px;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0 12px 0 15px;
-            border-bottom: 1px solid #eeeeee;
+        @keyframes panelFadeIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* --- Outer Container with Decorative Shapes --- */
+        .widget-outer-container {
+            position: relative;
+            width: 450px;
+            padding: 27px 35px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            overflow: visible;
+        }
+
+        /* Decorative Ribbons (Figma exact geometric vectors) */
+        .decorative-ribbon {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .ribbon-red {
+            top: 15px;
+            left: 20px;
+            width: 46px;
+            height: 98px;
+            background: #E63A2D;
+            border-radius: 24px 0 0 24px;
+            box-shadow: inset 0 4px 4px rgba(0, 0, 0, 0.25);
+        }
+
+        .ribbon-blue {
+            top: 15px;
+            right: 15px;
+            width: 80px;
+            height: 90px;
+            background: #2E6CF6;
+            border-radius: 0 40px 40px 0;
+        }
+
+        .ribbon-green {
+            bottom: 12px;
+            left: 12px;
+            width: 85px;
+            height: 48px;
+            background: #3AAA4D;
+            border-radius: 0 0 0 28px;
+        }
+
+        .ribbon-yellow {
+            bottom: 12px;
+            right: 25px;
+            width: 32px;
+            height: 70px;
+            background: #FCBD08;
+            border-radius: 0 16px 16px 0;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+        }
+
+        /* --- Main PolicyLens Card (Figma: Popup 380px) --- */
+        .policylens-card {
+            position: relative;
+            z-index: 10;
+            width: 380px;
+            max-height: calc(85vh - 54px);
+            background-color: #E2ECFE;
+            border-radius: 24px;
+            padding: 20px 20px 18px 20px;
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(37, 99, 235, 0.15);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(107, 114, 128, 0.4) transparent;
+        }
+
+        .policylens-card::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .policylens-card::-webkit-scrollbar-thumb {
+            background: rgba(107, 114, 128, 0.4);
+            border-radius: 10px;
+        }
+
+        /* Header */
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 14px;
             cursor: grab;
             touch-action: none;
+            user-select: none;
         }
 
-        .header.dragging { cursor: grabbing; }
-
-        .brand { display: flex; align-items: center; gap: 9px; pointer-events: none; }
-
-        .logo {
-            width: 32px; height: 32px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 9px; background: #f1f3f4; font-size: 17px;
+        .card-header.dragging {
+            cursor: grabbing;
         }
 
-        .brand-name { font-size: 15px; font-weight: 700; letter-spacing: -.2px; }
-
-        .header-actions { display: flex; gap: 3px; }
-
-        .header-btn {
-            width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center;
-            border: none; border-radius: 50%; background: transparent;
-            color: #5f6368; font-size: 17px; cursor: pointer;
+        .header-titles {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            pointer-events: none;
         }
 
-        .header-btn:hover { background: #f1f3f4; }
+        .card-title {
+            font-size: 22px;
+            font-weight: 800;
+            color: #1F2937;
+            line-height: 1.2;
+            letter-spacing: -0.035em;
+        }
 
-        .body { padding: 16px; overflow-y: auto; }
+        .card-subtitle {
+            font-size: 12.2px;
+            font-weight: 500;
+            color: #6B7280;
+            line-height: 1.35;
+            letter-spacing: -0.01em;
+        }
+
+        /* Window Control Dots */
+        .window-controls {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding-top: 4px;
+        }
+
+        .dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.15s ease, opacity 0.15s ease;
+        }
+
+        .dot:hover {
+            transform: scale(1.15);
+            opacity: 0.85;
+        }
+
+        .dot-close { background-color: #E63A2D; }
+        .dot-minimize { background-color: #FCBD08; }
+        .dot-expand { background-color: #3AAA4D; }
+
+        /* Current Page Box */
+        .page-info {
+            background-color: #FFFFFF;
+            border-radius: 10px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .page-info-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
 
         .label {
-            display: block; margin-bottom: 5px;
-            font-size: 9px; font-weight: 700; letter-spacing: 1px; color: #80868b;
+            font-size: 10px;
+            font-weight: 800;
+            color: #6B7280;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
 
-        .page-name {
-            margin-bottom: 9px; font-size: 13px; font-weight: 600;
-            line-height: 1.4; color: #202124; word-break: break-word;
+        .page-name-text {
+            font-size: 9.5px;
+            font-weight: 500;
+            color: #1F2937;
+            line-height: 1.35;
+            letter-spacing: -0.01em;
+            word-break: break-word;
         }
 
-        .category {
-            display: inline-flex; padding: 5px 9px; margin-bottom: 14px;
-            border-radius: 999px; background: #f1f3f4; color: #5f6368;
-            font-size: 10px; font-weight: 600;
+        .site-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 70px;
+            background-color: #64748B;
+            color: #FFFFFF;
+            line-height: 1.2;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
         }
 
+        /* Primary Analyze Button — Bold, Robust, Solid */
         #analyze {
-            width: 100%; height: 42px; border: none; border-radius: 9px;
-            background: #1a73e8; color: #ffffff; font-size: 13px; font-weight: 600;
+            width: 100% !important;
+            height: 42px !important;
+            min-height: 42px !important;
+            padding: 0 16px !important;
+            background-color: #2563EB;
+            color: #FFFFFF;
+            border: none;
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 13.6px;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            line-height: 42px;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.32);
+            transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            outline: none;
+            flex-shrink: 0;
         }
 
-        #analyze:hover { background: #1769d1; }
-        #analyze:disabled { opacity: .65; cursor: default; }
-
-        .status {
-            min-height: 20px; margin-top: 8px; text-align: center;
-            font-size: 10px; line-height: 1.4; color: #80868b;
+        #analyze:hover {
+            background-color: #1D4ED8;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.42);
         }
 
-        #results { display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid #eeeeee; }
-        #results.visible { display: block; }
+        #analyze:active {
+            background-color: #1E40AF;
+            transform: translateY(1px);
+        }
 
-        .results-title { margin-bottom: 10px; font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
+        #analyze:disabled {
+            opacity: 0.75;
+            cursor: not-allowed;
+        }
+
+        /* Status Line */
+        #status {
+            text-align: center;
+            font-size: 11.2px;
+            font-weight: 500;
+            color: #6B7280;
+            line-height: 1.35;
+            letter-spacing: -0.01em;
+            margin-top: 10px;
+        }
+
+        /* Results Container */
+        #results {
+            display: none;
+            margin-top: 14px;
+            flex-direction: column;
+            gap: 12px;
+            animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        #results.visible {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-heading {
+            font-size: 21.8px;
+            font-weight: 800;
+            color: #1F2937;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+        }
+
+        #cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
 
         .policy-card {
-            margin-bottom: 8px; padding: 11px;
-            border: 1px solid #e0e3e7; border-radius: 10px; background: #ffffff;
+            background-color: #E3ECFF;
+            border-radius: 10px;
+            padding: 12px 14px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .card-title-row {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 8px; margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .card-title { font-size: 12px; font-weight: 700; color: #202124; }
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1F2937;
+            letter-spacing: -0.015em;
+        }
 
+        /* Pill Badges */
         .badge {
-            flex-shrink: 0; padding: 3px 8px; border-radius: 999px;
-            font-size: 9px; font-weight: 700; letter-spacing: .3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 70px;
+            line-height: 1.2;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
         }
 
-        .badge-danger { background: #fce8e6; color: #c5221f; }
-        .badge-attention { background: #fef7e0; color: #b06000; }
-        .badge-safe { background: #e6f4ea; color: #137333; }
+        .badge-safe {
+            background-color: #C4FECE;
+            color: #166534;
+        }
 
-        .card-text { margin-bottom: 5px; font-size: 11px; line-height: 1.45; color: #5f6368; }
-        .card-text:last-child { margin-bottom: 0; }
-        .card-note { font-size: 10px; color: #9aa0a6; margin-top: 4px; }
+        .badge-attention {
+            background-color: #FFDEA3;
+            color: #9A3412;
+        }
 
+        .badge-danger {
+            background-color: #FEE2E2;
+            color: #991B1B;
+        }
+
+        .card-text {
+            font-size: 10.8px;
+            font-weight: 500;
+            color: #4B5563;
+            line-height: 1.45;
+            letter-spacing: -0.01em;
+            text-align: justify;
+        }
+
+        .card-note {
+            font-size: 10px;
+            color: #9CA3AF;
+            font-style: italic;
+            margin-top: 4px;
+        }
+
+        /* Warnings Section */
         .warning {
-            margin-top: 10px; padding: 11px;
-            border: 1px solid #f6e7a9; border-radius: 10px; background: #fff8e1;
+            background-color: #FFF7ED;
+            border: 1px solid #FED7AA;
+            border-radius: 10px;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
-        .warning-title { margin-bottom: 6px; font-size: 11px; font-weight: 700; color: #5f4b00; }
-        .warning-item { margin-bottom: 4px; font-size: 10px; line-height: 1.4; color: #665c32; }
-        .warning-item:last-child { margin-bottom: 0; }
+        .warning-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #9A3412;
+            letter-spacing: -0.015em;
+            line-height: 1.3;
+        }
+
+        #warnings {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .warning-item {
+            font-size: 10.8px;
+            font-weight: 500;
+            color: #431407;
+            line-height: 1.4;
+            letter-spacing: -0.01em;
+            position: relative;
+            padding-left: 14px;
+        }
+
+        .warning-item::before {
+            content: "•";
+            position: absolute;
+            left: 2px;
+            color: #EA580C;
+            font-weight: bold;
+        }
 
         .empty {
-            padding: 15px; border: 1px dashed #dadce0; border-radius: 9px;
-            text-align: center; font-size: 10px; color: #80868b;
+            padding: 15px;
+            border: 1px dashed rgba(107, 114, 128, 0.3);
+            border-radius: 9px;
+            text-align: center;
+            font-size: 11px;
+            color: #6B7280;
         }
-
-        .body::-webkit-scrollbar { width: 5px; }
-        .body::-webkit-scrollbar-thumb { background: #dadce0; border-radius: 10px; }
     `;
     shadow.appendChild(style);
 
     // ============================================================
-    // LAUNCHER
+    // LAUNCHER (Floating button with Full High-Resolution Vector Logo)
     // ============================================================
-
-    // chrome.runtime.getURL() turns an extension-relative path into a full
-    // chrome-extension://<id>/... URL — the only kind of URL a content
-    // script running inside someone else's page (this file) is allowed to
-    // load extension-packaged files from. A plain relative path here would
-    // resolve against the HOST PAGE's origin instead and 404. The file must
-    // also be listed under "web_accessible_resources" in manifest.json, or
-    // the browser blocks the load even with the correct URL.
-    const LOGO_URL = chrome.runtime.getURL("content/assets/LogoV1.svg");
 
     const launcher = document.createElement("button");
     launcher.id = "launcher";
     launcher.setAttribute("aria-label", "Open PolicyLens");
-    launcher.innerHTML = `<div class="launcher-logo"><img src="${LOGO_URL}" alt="" width="26" height="26"></div>`;
+    launcher.innerHTML = `
+        <div class="launcher-logo">
+            <svg width="36" height="36" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Blue Ribbon -->
+                <path d="M20.3604 10.0302C26.3707 10.0252 82.3794 10.0194 107.547 10.0109C137.208 9.95437 149.948 14.3681 151.588 14.9138C170.86 21.4342 185.349 33.0976 193.387 48.391C198.9 62.9277 199.455 69.4441 199.413 76.1406C199.387 83.0161 198.944 88.5221 197.25 94.1226C192.311 110.37 180.911 124.114 164.858 132.405C151.1 138.891 138.297 141.729 122.155 141.729V102.92C129.338 101.885 138.182 99.5486 148.479 89.2451C152.367 82.6865 152.958 74.6481 150.336 67.6934C146.556 60.1137 140.141 53.6436 130.644 50.1379C124.625 48.1797 112.636 46.9582 110.1 46.9474H20.3604C10.0446 34.1037 10.1299 24.9448 10.171 19.7502C10.2553 16.264 13.8674 11.2625 20.3604 10.0302Z" fill="#2E6CF6"/>
+                <!-- Red Ribbon -->
+                <path d="M128.534 81.5513L127.66 209.687C120.14 209.687 108.411 209.763 94.5786 203.156L93.242 202.295C87.7532 198.468 84.0505 192.272 82.8247 186.597C82.6429 184.302 82.6759 177.648 82.7028 166.23C82.7453 150.992 82.7726 133.983 82.8247 116.739C74.2733 116.891 67.1197 118.186 64.3766 124.787C64.3617 136.949 64.3121 153.188 64.2922 168.993C64.2562 182.087 64.218 201.186 64.2159 203.031C59.6436 208.769 49.5195 209.59 42.4554 209.596C28.2954 209.64 20.7548 208.509 17.2722 199.891C17.2407 182.973 17.2149 142.755 17.1876 108.449C17.1291 99.269 19.2503 92.1903 27.4019 85.303C34.3933 79.9664 41.9448 78.2851 51.3653 78.3126H121.034C124.33 78.5807 126.409 79.5662 128.534 81.5513Z" fill="#E63A2D"/>
+                <!-- Green Ribbon -->
+                <path d="M127.712 168.789C131.359 172.455 135.017 173.634 140.36 173.696H171.159C185.819 173.717 196.919 173.714 207.686 176.033C210.449 178.436 209.945 189.921 210 200.703C207.03 208.116 200.467 209.873 184.832 209.911C163.228 209.928 134.186 209.975 118.629 209.99C106.869 210.066 99.6743 208.269 92.9686 203.459C87.712 199.753 83.1357 192.592 83.1357 191.04C97.0812 191.581 108.701 188.453 110.476 187.735C118.111 184.437 123.479 179.093 126.342 172.613C126.851 170.759 127.272 169.482 127.712 168.789Z" fill="#3AAA4D"/>
+                <!-- Yellow Ribbon -->
+                <path d="M127.376 112.203H128.029C128.141 138.103 128.215 155.102 128.252 164.31C128.236 172.779 124.445 179.226 118.602 184.293C114.538 187.325 104.522 190.858 102.698 191.483C93.3799 191.99 88.5153 191.975 82.9728 191.375C81.5212 187.678 81.5185 180.353 81.5449 166.869C81.5874 151.63 81.6147 134.621 81.6668 117.378C87.6958 117.325 96.8228 117.229 103.861 117.159C110.656 117.089 116.879 117.025 118.966 117.004C121.908 116.779 123.596 116.279 125.581 114.532C126.714 113.315 127.376 112.203 127.376 112.203Z" fill="#FCBD08"/>
+            </svg>
+        </div>
+    `;
 
     // ============================================================
-    // PANEL
+    // FLOATING PANEL (Exact Figma UI Components)
     // ============================================================
 
     const panel = document.createElement("div");
     panel.id = "panel";
     panel.innerHTML = `
-        <div class="header" id="header">
-            <div class="brand">
-                <div class="logo"><img src="${LOGO_URL}" alt="" width="20" height="20"></div>
-                <div class="brand-name">PolicyLens</div>
-            </div>
-            <div class="header-actions">
-                <button class="header-btn" id="minimize" title="Minimize">−</button>
-                <button class="header-btn" id="close" title="Close">×</button>
-            </div>
-        </div>
-        <div class="body">
-            <span class="label">CURRENT PAGE</span>
-            <div class="page-name" id="page-name">Loading page...</div>
-            <div class="category" id="category">General Page</div>
-            <button id="analyze" type="button">Analyze with PolicyLens</button>
-            <div class="status" id="status">Ready to analyze this page.</div>
-            <div id="results">
-                <div class="results-title">Policy Summary</div>
-                <div id="cards"></div>
-                <div class="warning" id="warning" style="display:none;">
-                    <div class="warning-title">⚠️ Things you should know</div>
-                    <div id="warnings"></div>
+        <div class="widget-outer-container">
+            <!-- Decorative Ribbons -->
+            <div class="decorative-ribbon ribbon-blue"></div>
+            <div class="decorative-ribbon ribbon-red"></div>
+            <div class="decorative-ribbon ribbon-green"></div>
+            <div class="decorative-ribbon ribbon-yellow"></div>
+
+            <!-- Card -->
+            <div class="policylens-card">
+                <!-- Header -->
+                <div class="card-header" id="header">
+                    <div class="header-titles">
+                        <div class="card-title">PolicyLens</div>
+                        <div class="card-subtitle">Know what you're agreeing to.</div>
+                    </div>
+                    <div class="window-controls">
+                        <button class="dot dot-close" id="close" title="Close"></button>
+                        <button class="dot dot-minimize" id="minimize" title="Minimize"></button>
+                        <span class="dot dot-expand" title="PolicyLens Active"></span>
+                    </div>
+                </div>
+
+                <!-- Page Info -->
+                <div class="page-info">
+                    <div class="page-info-header">
+                        <span class="label">CURRENT PAGE</span>
+                        <div class="site-badge" id="category">&lt;General Page/&gt;</div>
+                    </div>
+                    <div class="page-name-text" id="page-name">Loading page...</div>
+                </div>
+
+                <!-- Analyze Button -->
+                <button id="analyze" type="button">Analyze with PolicyLens</button>
+
+                <!-- Status -->
+                <div id="status">Ready to analyze this page.</div>
+
+                <!-- Results -->
+                <div id="results">
+                    <div class="results-heading">Policy Summary</div>
+                    <div id="cards"></div>
+
+                    <div class="warning" id="warning" style="display:none;">
+                        <div class="warning-title">⚠️ Things you should know</div>
+                        <div id="warnings"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -325,21 +619,9 @@
     pageName.textContent = document.title || window.location.hostname;
 
     // ============================================================
-    // DRAG-TO-REPOSITION
+    // DRAGGABLE & VIEWPORT CLAMPING
     // ============================================================
-    //
-    // Makes `target` movable by dragging `handle`. Converts target from its
-    // CSS right/bottom anchoring to left/top pixel coordinates on first
-    // drag, and clamps it to stay fully on-screen. If the pointer never
-    // moves past `dragThreshold`, it's treated as a plain click and
-    // `onClick` fires instead — so the launcher still opens on tap.
 
-    // Keeps `el` fully inside the viewport without disturbing a position the
-    // user deliberately dragged to — it only nudges top/left back on-screen
-    // when the element's current size would otherwise overflow. Called after
-    // opening the panel and again whenever its content changes height (e.g.
-    // once analysis results render in), since #results expanding can push
-    // the panel's bottom edge past the bottom of the window.
     function fitPanelToViewport(el, padding = 8) {
         const rect = el.getBoundingClientRect();
         let top = rect.top;
@@ -366,7 +648,7 @@
 
         handle.addEventListener("pointerdown", (e) => {
             if (e.button !== 0) return;
-            if (e.target.closest(".header-btn")) return; // let close/minimize work normally
+            if (e.target.closest(".dot")) return;
 
             const rect = target.getBoundingClientRect();
             target.style.left = `${rect.left}px`;
@@ -414,7 +696,7 @@
                 handle.classList.remove(draggingClass);
                 target.classList.remove(draggingClass);
             }
-            try { handle.releasePointerCapture(e.pointerId); } catch (_) { /* no-op */ }
+            try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
 
             if (!moved && typeof onClick === "function") onClick(e);
             moved = false;
@@ -426,15 +708,13 @@
 
     function openPanel() {
         const launcherRect = launcher.getBoundingClientRect();
-        const width = 360;
+        const width = 450;
 
         let left = launcherRect.right - width;
         left = Math.min(Math.max(8, left), window.innerWidth - width - 8);
 
-        // Provisional position above the launcher; corrected once we know
-        // the panel's real rendered height.
         panel.style.left = `${left}px`;
-        panel.style.top = `${Math.max(8, launcherRect.top - 400)}px`;
+        panel.style.top = `${Math.max(8, launcherRect.top - 460)}px`;
         panel.style.right = "auto";
         panel.style.bottom = "auto";
 
@@ -442,18 +722,10 @@
         panel.classList.add("open");
 
         requestAnimationFrame(() => {
-            const panelRect = panel.getBoundingClientRect();
-            let top = launcherRect.top - panelRect.height - 12;
-            if (top < 8) {
-                top = Math.min(launcherRect.bottom + 12, window.innerHeight - panelRect.height - 8);
-            }
-            panel.style.top = `${Math.max(8, top)}px`;
             fitPanelToViewport(panel);
         });
     }
 
-    // If the panel is open and its content resizes (e.g. results render in)
-    // or the window itself resizes, pull it back on-screen if needed.
     window.addEventListener("resize", () => {
         if (panel.classList.contains("open")) fitPanelToViewport(panel);
     });
@@ -470,9 +742,7 @@
     shadow.querySelector("#minimize").addEventListener("click", closePanel);
 
     // ============================================================
-    // ANALYZE — runs the extraction pipeline locally (this script
-    // already has DOM access), then sends the result to the backend
-    // through the existing, correctly-wired backendClient.js helper.
+    // PIPELINE & AI EXTRACTION
     // ============================================================
 
     function buildStats(detected) {
@@ -486,16 +756,6 @@
             interactiveElements: detected?.interactiveElements?.length || 0
         };
     }
-
-    // ============================================================
-    // "THINKING" STATUS ANIMATION
-    //
-    // The backend step (Gemini call) is the slow part — often several
-    // seconds. Rather than a single static "Contacting AI..." string,
-    // cycle through a few phrases with an animated ellipsis, similar to
-    // a streaming "thinking" indicator, so it's clear something is still
-    // happening rather than the UI having stalled.
-    // ============================================================
 
     const ANALYSIS_LOADING_PHRASES = [
         "Reviewing terms with PolicyLens AI",
@@ -537,11 +797,11 @@
     }
 
     function formatCategory(raw) {
-        if (!raw) return "Policy";
+        if (!raw) return "General Page";
         return String(raw)
             .toLowerCase()
             .replace(/_/g, " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase());
+            .replace(/\\b\\w/g, (c) => c.toUpperCase());
     }
 
     analyzeButton.addEventListener("click", async () => {
@@ -564,7 +824,7 @@
             const payload = { success: true, data: detected, stats };
 
             const topSection = detected?.policySections?.[0];
-            category.textContent = topSection ? formatCategory(topSection.category) : "General Page";
+            category.textContent = topSection ? `<${formatCategory(topSection.category)}/>` : "<General Page/>";
 
             startLoadingAnimation(status);
             const backendResult = await window.PolicyLensBackend.sendAnalysis(payload);
@@ -577,8 +837,6 @@
             }
 
             renderResults(payload);
-            // Results just expanded the panel's content height — make sure
-            // it's still fully on-screen (wait a frame so layout settles).
             requestAnimationFrame(() => fitPanelToViewport(panel));
 
             status.textContent = payload.ai
@@ -597,10 +855,6 @@
 
     // ============================================================
     // RENDER RESULTS
-    //
-    // Dual-mode, matching the popup.js fix in the reference doc: reads
-    // `payload.ai` / `payload.aiError` at the TOP level (siblings of
-    // `payload.data`) — not nested inside `payload.data`.
     // ============================================================
 
     function renderResults(payload) {
@@ -634,7 +888,7 @@
         row.className = "card-title-row";
         row.innerHTML = `
             <span class="card-title">${escapeHtml(card.label || "Policy")}</span>
-            <span class="badge ${badgeClass}">${escapeHtml(card.badgeText || "")}</span>
+            <span class="badge ${badgeClass}">&lt;${escapeHtml(card.badgeText || badgeClass.toUpperCase())}/&gt;</span>
         `;
         el.appendChild(row);
 
@@ -656,7 +910,7 @@
         row.className = "card-title-row";
         row.innerHTML = `
             <span class="card-title">${escapeHtml(formatCategory(section.category))}</span>
-            <span class="badge ${confident ? "badge-safe" : "badge-attention"}">${confident ? "RELEVANT" : "CHECK"}</span>
+            <span class="badge ${confident ? "badge-safe" : "badge-attention"}">&lt;${confident ? "Relevant" : "Check"}/&gt;</span>
         `;
         el.appendChild(row);
 

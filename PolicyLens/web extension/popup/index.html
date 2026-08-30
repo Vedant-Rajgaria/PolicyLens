@@ -2,172 +2,115 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PolicyLens</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
-
+    <!-- Award-Winning Modern Typography: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
-
 
 <body>
 
-    <div class="container">
+    <div class="widget-outer-container">
 
+        <!-- DECORATIVE BRAND RIBBONS (Figma Exact Overlap & Positions) -->
+        <div class="decorative-ribbon ribbon-blue"></div>
+        <div class="decorative-ribbon ribbon-red"></div>
+        <div class="decorative-ribbon ribbon-green"></div>
+        <div class="decorative-ribbon ribbon-yellow"></div>
 
-        <!-- HEADER -->
+        <!-- MAIN CARD CONTAINER (Figma: Popup #e2ecfe, 380px, radius 24px) -->
+        <div class="policylens-card" id="policylens-card">
 
-        <header>
-
-            <div class="logo">
-                <img src="../content/assets/LogoV1.svg" height="42px">
-            </div>
-
-            <div>
-
-                <h1>
-                    PolicyLens
-                </h1>
-
-                <p>
-                    Know what you're agreeing to.
-                </p>
-
-            </div>
-
-        </header>
-
-
-
-        <!-- CURRENT PAGE -->
-
-        <div class="page-info">
-
-            <span class="label">
-                CURRENT PAGE
-            </span>
-
-            <div id="page-name">
-                Loading page info...
-            </div>
-
-            <div
-                id="site-badge"
-                class="site-badge hidden"
-            >
-            </div>
-
-        </div>
-
-
-
-        <!-- ANALYZE BUTTON -->
-
-        <button id="analyze-btn">
-            Analyze with PolicyLens
-        </button>
-
-
-
-        <!-- STATUS -->
-
-        <div id="status">
-        </div>
-
-
-
-        <!-- RESULTS -->
-
-        <div
-            id="results"
-            class="hidden"
-        >
-
-
-            <!-- POLICY SUMMARY -->
-
-            <h2>
-                Policy Information
-            </h2>
-
-            <div id="summary-line" class="summary-line">
-            </div>
-
-
-            <!-- DYNAMIC POLICY CARDS -->
-
-            <div id="cards-container">
-            </div>
-
-
-
-            <!-- IMPORTANT INFORMATION -->
-
-            <div class="warning">
-
-                <h3>
-                    ⚠️ Things you should know
-                </h3>
-
-                <ul id="warning-list">
-                </ul>
-
-            </div>
-
-
-
-            <!-- RELEVANT POLICY LINKS -->
-
-            <div class="links-section">
-
-                <h3>
-                    🔗 Relevant Policy Links
-                </h3>
-
-                <div id="links-container">
+            <!-- HEADER (Figma: PolicyLens Heading + Window Control Dots) -->
+            <header class="card-header">
+                <div class="header-titles">
+                    <h1 class="card-title">PolicyLens</h1>
+                    <p class="card-subtitle">Know what you're agreeing to.</p>
                 </div>
 
-            </div>
+                <div class="window-controls">
+                    <span class="dot dot-close" title="Close"></span>
+                    <span class="dot dot-minimize" title="Minimise"></span>
+                    <span class="dot dot-expand" title="Expand"></span>
+                </div>
+            </header>
 
-
-
-            <!-- EXTRACTION DETAILS -->
-
-            <details class="debug-section">
-
-                <summary>
-                    Extraction Details
-                </summary>
-
-
-                <div id="stats">
+            <!-- CURRENT PAGE INFO BOX (Figma: Current Page #ffffff, radius 10px) -->
+            <div class="page-info">
+                <div class="page-info-header">
+                    <span class="label">CURRENT PAGE</span>
+                    <div id="site-badge" class="site-badge hidden">&lt;General Page/&gt;</div>
                 </div>
 
+                <div id="page-name" class="page-name-text">
+                    Loading page info...
+                </div>
+            </div>
 
-                <pre id="raw-output">
-                </pre>
+            <!-- ANALYZE BUTTON (Figma: Analyze Interactive #2563eb, radius 9px, 13.6px bold) -->
+            <button id="analyze-btn" class="primary-btn">
+                Analyze with PolicyLens
+            </button>
 
-            </details>
+            <!-- STATUS (Figma: Ready to analyze this page) -->
+            <div id="status" class="status-text">
+                Ready to analyze this page.
+            </div>
 
+            <!-- RESULTS SECTION (Figma: Expanded Popup Policy Summary) -->
+            <div id="results" class="results-container hidden">
+
+                <!-- POLICY SUMMARY HEADING (Figma: Policy Summary 21.8px bold) -->
+                <h2 class="results-heading">
+                    Policy Summary
+                </h2>
+
+                <div id="summary-line" class="summary-line">
+                </div>
+
+                <!-- DYNAMIC POLICY CARDS (Figma: body #e3ecff, radius 10px, padding 12px 14px) -->
+                <div id="cards-container" class="cards-container">
+                </div>
+
+                <!-- IMPORTANT INFORMATION / WARNINGS -->
+                <div class="warning">
+                    <h3 class="warning-title">
+                        ⚠️ Things you should know
+                    </h3>
+                    <ul id="warning-list" class="warning-list">
+                    </ul>
+                </div>
+
+                <!-- RELEVANT POLICY LINKS -->
+                <div class="links-section">
+                    <h3 class="links-title">
+                        🔗 Relevant Policy Links
+                    </h3>
+                    <div id="links-container" class="links-container">
+                    </div>
+                </div>
+
+                <!-- EXTRACTION DETAILS (DEBUG) -->
+                <details class="debug-section">
+                    <summary class="debug-summary">
+                        Extraction Details
+                    </summary>
+                    <div id="stats" class="stats-box">
+                    </div>
+                    <pre id="raw-output" class="raw-output-box"></pre>
+                </details>
+
+            </div>
 
         </div>
-
 
     </div>
 
-
-    <!-- POPUP JAVASCRIPT -->
-
+    <!-- POPUP JAVASCRIPT (Untouched Functional Source of Truth) -->
     <script src="popup.js"></script>
 
 </body>
