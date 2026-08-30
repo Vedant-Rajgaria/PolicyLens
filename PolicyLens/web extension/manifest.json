@@ -1,18 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "PolicyLens Demo",
-  "version": "0.2.0",
-  "description": "PolicyLens browser-side extraction demo.",
+  "name": "PolicyLens",
+  "version": "0.1.0",
+  "description": "PolicyLens browser-side extraction.",
   "permissions": ["activeTab"],
   "host_permissions": ["http://localhost:8000/*"],
-  "web_accessible_resources": [
-  {
-    "resources": ["content/assets/LogoV1.svg"],
-    "matches": ["<all_urls>"]
-  }
-],
-  "background": { "service_worker": "background.js" },
-  "action": { "default_popup": "popup/index.html" },
+  "icons": {
+    "128": "assets/icon128.png"
+  },
+  "action": { 
+    "default_popup": "popup/index.html" 
+  },
+  "background": { 
+    "service_worker": "background.js" 
+  },
   "content_scripts": [{
     "matches": ["<all_urls>"],
     "js": [
