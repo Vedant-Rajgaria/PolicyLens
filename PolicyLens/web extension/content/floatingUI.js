@@ -1,6 +1,7 @@
 /**
  * PolicyLens — Floating In-Page Widget (Content Script)
- * Award-Winning Typography (Plus Jakarta Sans) + Logo Morphing Animation + Interactive Window Controls
+ * Award-Winning Typography: Outfit + Plus Jakarta Sans
+ * Clean UI (No Star Emoji, No Pill Tag) + Morphing Animation
  * Designed by Vedant & Darsh
  */
 
@@ -30,12 +31,12 @@
     const shadow = root.attachShadow({ mode: "open" });
 
     // ============================================================
-    // STYLES (Plus Jakarta Sans + Morphing Animations + No White Circle)
+    // STYLES (Outfit + Plus Jakarta Sans + Morphing Animations)
     // ============================================================
 
     const style = document.createElement("style");
     style.textContent = `
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
         * {
             box-sizing: border-box;
@@ -187,7 +188,7 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
         }
 
-        /* Expanding & Morphing State (Logo parts fly out to 4 corners) */
+        /* Expanding & Morphing State */
         #panel.open .ribbon-blue {
             animation: morphRibbonBlue 0.48s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -282,7 +283,7 @@
             border-radius: 10px;
         }
 
-        /* --- Aesthetic Info Toast (Designed by Vedant & Darsh) --- */
+        /* --- Aesthetic Info Toast (Designed by Vedant & Darsh - Clean No-Emoji) --- */
         .info-toast {
             position: absolute;
             top: 14px;
@@ -293,7 +294,7 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.85);
             box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.28), 0 4px 14px rgba(37, 99, 235, 0.2);
             padding: 14px 16px;
             animation: toastSlideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -315,15 +316,11 @@
             margin-bottom: 6px;
         }
 
-        .info-toast-icon {
-            font-size: 14px;
-            margin-right: 6px;
-        }
-
         .info-toast-title {
-            font-size: 13px;
-            font-weight: 800;
-            color: #1F2937;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #111827;
             letter-spacing: -0.02em;
             flex: 1;
         }
@@ -349,7 +346,7 @@
             font-size: 11.5px;
             font-weight: 500;
             color: #374151;
-            line-height: 1.4;
+            line-height: 1.45;
             margin-bottom: 6px;
         }
 
@@ -383,20 +380,21 @@
         .header-titles {
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: 1px;
             pointer-events: none;
         }
 
         .card-title {
-            font-size: 22px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 23px;
             font-weight: 800;
-            color: #1F2937;
-            line-height: 1.2;
-            letter-spacing: -0.035em;
+            color: #111827;
+            line-height: 1.15;
+            letter-spacing: -0.04em;
         }
 
         .card-subtitle {
-            font-size: 12.2px;
+            font-size: 12px;
             font-weight: 500;
             color: #6B7280;
             line-height: 1.35;
@@ -436,7 +434,7 @@
         .dot-minimize { background-color: #FCBD08; }
         .dot-expand { background-color: #3AAA4D; }
 
-        /* Current Page Box */
+        /* Current Page Box (Clean box without pill) */
         .page-info {
             background-color: #FFFFFF;
             border-radius: 10px;
@@ -445,46 +443,32 @@
             margin-bottom: 14px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         .page-info-header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
         }
 
         .label {
-            font-size: 10px;
-            font-weight: 800;
+            font-family: 'Outfit', sans-serif;
+            font-size: 9.5px;
+            font-weight: 700;
             color: #6B7280;
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
         .page-name-text {
-            font-size: 9.5px;
+            font-size: 10px;
             font-weight: 500;
-            color: #1F2937;
+            color: #111827;
             line-height: 1.35;
             letter-spacing: -0.01em;
             word-break: break-word;
-        }
-
-        .site-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 8px;
-            font-weight: 700;
-            padding: 2px 8px;
-            border-radius: 70px;
-            background-color: #64748B;
-            color: #FFFFFF;
-            line-height: 1.2;
-            letter-spacing: 0.03em;
-            white-space: nowrap;
         }
 
         /* Primary Analyze Button — Bold, Solid, Robust */
@@ -497,10 +481,10 @@
             color: #FFFFFF;
             border: none;
             border-radius: 9px;
-            font-family: inherit;
-            font-size: 13.6px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
             font-weight: 700;
-            letter-spacing: -0.015em;
+            letter-spacing: -0.02em;
             line-height: 42px;
             cursor: pointer;
             display: flex;
@@ -559,11 +543,12 @@
         }
 
         .results-heading {
-            font-size: 21.8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
             font-weight: 800;
-            color: #1F2937;
+            color: #111827;
             line-height: 1.2;
-            letter-spacing: -0.03em;
+            letter-spacing: -0.035em;
         }
 
         #cards {
@@ -595,10 +580,11 @@
         }
 
         .card-title {
-            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14.5px;
             font-weight: 700;
-            color: #1F2937;
-            letter-spacing: -0.015em;
+            color: #111827;
+            letter-spacing: -0.02em;
         }
 
         /* Pill Badges */
@@ -606,12 +592,14 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 8.5px;
             font-weight: 700;
             padding: 2px 8px;
             border-radius: 70px;
             line-height: 1.2;
-            letter-spacing: 0.02em;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
             white-space: nowrap;
         }
 
@@ -631,10 +619,10 @@
         }
 
         .card-text {
-            font-size: 10.8px;
+            font-size: 11px;
             font-weight: 500;
-            color: #4B5563;
-            line-height: 1.45;
+            color: #374151;
+            line-height: 1.48;
             letter-spacing: -0.01em;
             text-align: justify;
         }
@@ -658,10 +646,11 @@
         }
 
         .warning-title {
-            font-size: 13px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13.5px;
             font-weight: 700;
             color: #9A3412;
-            letter-spacing: -0.015em;
+            letter-spacing: -0.02em;
             line-height: 1.3;
         }
 
@@ -672,10 +661,10 @@
         }
 
         .warning-item {
-            font-size: 10.8px;
+            font-size: 11px;
             font-weight: 500;
             color: #431407;
-            line-height: 1.4;
+            line-height: 1.45;
             letter-spacing: -0.01em;
             position: relative;
             padding-left: 14px;
@@ -738,10 +727,9 @@
 
             <!-- Main Card -->
             <div class="policylens-card">
-                <!-- Aesthetic Info Toast (Designed by Vedant & Darsh) -->
+                <!-- Aesthetic Info Toast (Clean Note - Star emoji removed) -->
                 <div class="info-toast hidden" id="info-toast">
                     <div class="info-toast-header">
-                        <span class="info-toast-icon">✨</span>
                         <span class="info-toast-title">PolicyLens Note</span>
                         <button class="info-toast-close" id="info-toast-close" type="button" aria-label="Close Note">&times;</button>
                     </div>
@@ -762,11 +750,10 @@
                     </div>
                 </div>
 
-                <!-- Page Info -->
+                <!-- Page Info (Clean without pill badge) -->
                 <div class="page-info">
                     <div class="page-info-header">
                         <span class="label">CURRENT PAGE</span>
-                        <div class="site-badge" id="category">&lt;General Page/&gt;</div>
                     </div>
                     <div class="page-name-text" id="page-name">Loading page...</div>
                 </div>
@@ -803,7 +790,6 @@
     const analyzeButton = shadow.querySelector("#analyze");
     const status = shadow.querySelector("#status");
     const pageName = shadow.querySelector("#page-name");
-    const category = shadow.querySelector("#category");
     const results = shadow.querySelector("#results");
     const cardsEl = shadow.querySelector("#cards");
     const warningBox = shadow.querySelector("#warning");
@@ -1047,7 +1033,7 @@
     }
 
     function formatCategory(raw) {
-        if (!raw) return "General Page";
+        if (!raw) return "Policy";
         return String(raw)
             .toLowerCase()
             .replace(/_/g, " ")
@@ -1072,9 +1058,6 @@
             const detected = window.PolicyLensDetector.detect(cleaned);
             const stats = buildStats(detected);
             const payload = { success: true, data: detected, stats };
-
-            const topSection = detected?.policySections?.[0];
-            category.textContent = topSection ? `<${formatCategory(topSection.category)}/>` : "<General Page/>";
 
             startLoadingAnimation(status);
             const backendResult = await window.PolicyLensBackend.sendAnalysis(payload);
