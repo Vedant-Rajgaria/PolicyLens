@@ -15,6 +15,7 @@ those stages (see pipeline.py, which owns that sequencing).
 """
 
 from __future__ import annotations
+from typing import List
 
 import logging
 from typing import Dict, List, Set
@@ -43,6 +44,8 @@ logger = logging.getLogger(__name__)
 MAX_STATEMENTS_PER_CATEGORY = 6
 MAX_STATEMENT_LENGTH = 400          # characters, per statement
 MAX_ADDITIONAL_EVIDENCE_ITEMS = 10
+MAX_ADDITIONAL_EVIDENCE = 15
+MAX_RELEVANT_LINKS = 8
 MAX_TOTAL_EVIDENCE_CHARS = 12_000   # rough character budget standing in for a token budget
 MIN_STATEMENTS_KEPT_PER_CATEGORY = 1  # floor when trimming to fit the budget
 NEAR_DUPLICATE_TOKEN_OVERLAP = 0.8  # jaccard similarity threshold
@@ -364,24 +367,10 @@ def optimize_policy_data(
     classification: PageClassification,
     checklist_result: ChecklistResult,
 ) -> OptimizedPolicyInput:
-    """
-    Build the stable, bounded OptimizedPolicyInput that gets passed to
-    analyse_policy(). Does not call Gemini and does not interpret the
-    evidence — only selects, dedupes, ranks, and truncates it.
-    """
-    policy_evidence = _build_policy_evidence(extraction)
-    additional_evidence = _build_additional_evidence(extraction, policy_evidence)
-    policy_evidence, additional_evidence = _enforce_size_budget(policy_evidence, additional_evidence)
-    discovery_hints = _build_discovery_hints(extraction, checklist_result)
-
     page = OptimizedPageInfo(
-        url=extraction.page.url,
-        title=extraction.page.title,
-        domain=extraction.page.domain,
-        page_type=classification.page_type,
-        classification_confidence=classification.confidence,
+        url=extraction.page.url, title=extraction.page.title, domain=extraction.page.domain,
+        page_type=classification.page_type, classification_confidence=classification.confidence,
     )
-
     checklist = OptimizedChecklist(
         page_type=checklist_result.page_type,
         required_categories=checklist_result.required_categories,
@@ -390,10 +379,38 @@ def optimize_policy_data(
         unclear_categories=checklist_result.unclear_categories,
     )
 
+    policy_evidence: List[PolicyEvidenceGroup] = []
+    covered = set()
+    for section in extraction.policy_sections:
+        statements = [b for b in section.blocks if b.strip()][:MAX_STATEMENTS_PER_CATEGORY]
+        if not statements:
+            continue
+        covered.update(s.lower() for s in statements)
+        policy_evidence.append(PolicyEvidenceGroup(
+            category=section.category, confidence=section.confidence, statements=statements,
+        ))
+
+    additional: List[AdditionalEvidenceItem] = []
+    for block in extraction.content.blocks:
+        if len(additional) >= MAX_ADDITIONAL_EVIDENCE:
+            break
+        if block.text.lower() in covered:
+            continue
+        additional.append(AdditionalEvidenceItem(
+            text=block.text, source="content_block", nearby_heading=block.nearby_heading,
+        ))
+
+    relevant_links = [
+        RelevantLink(text=link.text, url=link.url, suggested_category=link.category)
+        for link in extraction.links
+        if link.category in checklist_result.missing_categories
+    ][:MAX_RELEVANT_LINKS]
+
     return OptimizedPolicyInput(
-        page=page,
-        checklist=checklist,
-        policy_evidence=policy_evidence,
-        additional_relevant_evidence=additional_evidence,
-        discovery_hints=discovery_hints,
+        page=page, checklist=checklist, policy_evidence=policy_evidence,
+        additional_relevant_evidence=additional,
+        discovery_hints=DiscoveryHints(
+            missing_categories=checklist_result.missing_categories,
+            relevant_links=relevant_links,
+        ),
     )
